@@ -10,8 +10,17 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
+    
+    @NotNull
+    @Column(name = "login")
     private String login;
+
+    @NotNull
+    @Column(name = "password")
     private String password;
+
+    @NotNull
+    @Column(name = "role")
     private String role;
 
     public long getId() {
