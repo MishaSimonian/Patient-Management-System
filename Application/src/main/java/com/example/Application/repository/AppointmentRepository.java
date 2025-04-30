@@ -3,12 +3,17 @@ package com.example.Application.repository;
 import com.example.Application.model.Appointment;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
     //Custom query to find appointments by doctor name
-    List<Appointment> findByDoctorName(String doctorName);
+    List<Appointment> findByDoctorNameContainingIgnoreCase(String doctorName);
 
     //Custom query to find appointment by patient ID
     List<Appointment> findByPatientId(Long patientId);
+
+    //Custom query to find appointments by date
+    List<Appointment> findByAppointmentDate(LocalDateTime appointmentDate);
+
 }

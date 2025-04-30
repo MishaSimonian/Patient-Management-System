@@ -8,10 +8,12 @@ import com.example.Application.repository.AppointmentRepository;
 import com.example.Application.repository.PatientRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -50,16 +52,40 @@ public class AppointmentController {
     }
 
     //Get appointments by specific patient
-    @GetMapping("/{id}")
-    public ResponseEntity<List<BasicAppointmentResponseDTO>> getAppointmentsByPatient(@PathVariable Long id) {
-        if(!patientRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Patient with ID: " + id + " not found");
+    @GetMapping("/appointments")
+    public ResponseEntity<List<BasicAppointmentResponseDTO>> filterAppointments(
+            @RequestParam(required = false) Long patientId,
+            @RequestParam(required = false) String doctorName,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime appointmentDate) {
+
+        List<Appointment> appointments;
+
+        if(patientId != null) {
+            if(!patientRepository.existsById(patientId)) {
+                throw new ResourceNotFoundException("Patient with ID: " + patientId + " not found");
+            }
+            appointments = appointmentRepository.findByPatientId(patientId);
+        } else {
+            appointments = appointmentRepository.findAll();
         }
 
-        List<Appointment> appointments = appointmentRepository.findByPatientId(id);
+        // Apply additional filtering in memory if doctorName or appointmentDate is provided
+        if(doctorName != null) {
+            appointments = appointments.stream()
+                    .filter(a -> a.getDoctorName().equalsIgnoreCase(doctorName))
+                    .toList();
+        }
+
+        if(appointmentDate != null) {
+            appointments = appointments.stream()
+                    .filter(a -> a.getAppointmentDate().toLocalDate().equals(appointmentDate.toLocalDate()))
+                    .toList();
+        }
+
         List<BasicAppointmentResponseDTO> response = appointments.stream()
                 .map(BasicAppointmentResponseDTO::new)
                 .toList();
+
         return ResponseEntity.ok(response);
     }
 
@@ -101,7 +127,7 @@ public class AppointmentController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteAppointment(@PathVariable Long id) {
         if(!appointmentRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Appointment not found");
         }
 
 
